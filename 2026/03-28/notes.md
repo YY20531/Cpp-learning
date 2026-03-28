@@ -90,3 +90,52 @@ typename classname :: x = 0;
 指针？
 
 </details>
+
+## 3.string的了解
+
+### 🤔function
+<details>
+<summary></summary>
+
+| 操作类型     | 函数/方法                          | 功能                                           | 示例                                             |
+| -------- | ------------------------------ | -------------------------------------------- | ---------------------------------------------- |
+| **初始化**  | 构造函数                           | 声明空字符串 / 指定大小 / 默认字符                         | `string s1;`<br>`string s2(5,'a'); // "aaaaa"` |
+|          | 从 C 字符串初始化                     | 将 char 数组转换为 string                          | `char str[]="hello"; string s3(str);`          |
+|          | 拷贝构造                           | 复制另一个 string                                 | `string s4(s3);`                               |
+| **长度信息** | `size()` / `length()`          | 字符串长度                                        | `s.size();`                                    |
+|          | `empty()`                      | 是否为空                                         | `s.empty();`                                   |
+| **访问字符** | `operator[]`                   | 下标访问，不检查越界                                   | `s[0];`                                        |
+|          | `at()`                         | 下标访问，会检查越界                                   | `s.at(0);`                                     |
+|          | `front()`                      | 第一个字符                                        | `s.front();`                                   |
+|          | `back()`                       | 最后一个字符                                       | `s.back();`                                    |
+| **增删**   | `push_back()`                  | 尾部添加字符                                       | `s.push_back('!');`                            |
+|          | `pop_back()`                   | 删除尾部字符                                       | `s.pop_back();`                                |
+|          | `append()`                     | 尾部添加字符串                                      | `s.append(" world");`                          |
+|          | `insert()`                     | 插入字符串                                        | `s.insert(5, " C++");`                         |
+|          | `erase()`                      | 删除字符或子串                                      | `s.erase(0, 5); // 从0开始删除5个字符`                 |
+|          | `clear()`                      | 清空字符串                                        | `s.clear();`                                   |
+| **查找**   | `find()`                       | 查找子串，返回下标                                    | `s.find("abc");`                               |
+|          | `rfind()`                      | 从右向左查找子串                                     | `s.rfind("abc");`                              |
+|          | `find_first_of()`              | 查找任意一个字符                                     | `s.find_first_of("aeiou");`                    |
+|          | `find_last_of()`               | 从右查找任意字符                                     | `s.find_last_of("aeiou");`                     |
+| **替换**   | `replace()`                    | 替换子串                                         | `s.replace(0,3,"xyz");`                        |
+| **子串**   | `substr(pos,len)`              | 截取子串                                         | `s.substr(2,5); // 从2开始长度5`                    |
+| **比较**   | `==, !=`                       | 字符串相等/不等                                     | `if(s1==s2)`                                   |
+|          | `<, >`                         | 字典序比较                                        | `if(s1 < s2)`                                  |
+|          | `compare()`                    | 返回比较结果                                       | `s1.compare(s2);`                              |
+| **转换**   | `stoi()` / `stof()` / `stol()` | 字符串转整数/浮点                                    | `int x = stoi("123");`                         |
+|          | `to_string()`                  | 数字转字符串                                       | `string s = to_string(456);`                   |
+| **遍历**   | 下标遍历                           |                                                   | `for(size_t i=0;i<s.size();++i) cout<<s[i];` |
+|          | 范围 for                         |                                                    | `for(char c:s) cout<<c;`                       |
+| **修改大小** | `resize(n)`                    | 改变长度，多余截断，新增填字符                              | `s.resize(10,'x');`                            |
+|          | `reserve(n)`                   | 预留容量，优化性能                                    | `s.reserve(50);`                               |
+| **其他**   | `c_str()`                      | 返回 C 字符串                                     | `const char* p = s.c_str();`                   |
+|          | `swap()`                       | 交换字符串                                        | `s1.swap(s2);`                                 |
+|          | `reverse()` (algorithm)        | 反转字符串                                        | `reverse(s.begin(), s.end());`                 |
+
+
+</details>
+
+>u1s1,这两的函数还挺像，好吧，应该就是相同的，毕竟string也就是char类型的动态数组，
+>只是在vector的基础上多了一些自己的方法，不赖🌭
+
