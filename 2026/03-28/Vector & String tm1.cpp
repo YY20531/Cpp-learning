@@ -36,12 +36,12 @@ public:
         {
             int cmp = strs[i].length();
             min = min < cmp  ? min : cmp; 
-        }//找最短字符串
+        }//找最短字符串，有现成的min函数
 
         for(int j = 0; j < min; j ++)
         {
             char temp = strs[0][j];
-            int pd = 1;
+            int pd = 1;//可以省去，如果不匹配直接返回结果就行
             for(int i = 1; i < len; i ++)
             {
                 if(temp == strs[i][j]) continue;
