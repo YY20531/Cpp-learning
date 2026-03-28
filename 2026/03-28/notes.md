@@ -108,8 +108,8 @@ typename classname :: x = 0;
 |          |🔥 `at()`                         | 下标访问，会检查越界                                   | `s.at(0);`                                     |
 |          | `front()`                      | 第一个字符                                        | `s.front();`                                   |
 |          | `back()`                       | 最后一个字符                                       | `s.back();`                                    |
-| **增删**   | 🔥`push_back()`                  | 尾部添加字符                                       | `s.push_back('!');`                            |
-|          |🔥 `pop_back()`                   | 删除尾部字符                                       | `s.pop_back();`                                |
+| **增删**   | `push_back()` (评价为不如直接+)                | 尾部添加字符                                       | `s.push_back('!');`                            |
+|          | `pop_back()` (同上)              | 删除尾部字符                                       | `s.pop_back();`                                |
 |          | `append()`                     | 尾部添加字符串                                      | `s.append(" world");`                          |
 |          | `insert()`                     | 插入字符串                                        | `s.insert(5, " C++");`                         |
 |          | 🔥`erase()`                      | 删除字符或子串                                      | `s.erase(0, 5); // 从0开始删除5个字符`                 |
