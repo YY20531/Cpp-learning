@@ -34,7 +34,31 @@ float add(float a, float b)
 */
 
 //2.运算符的重载:fire
+/*语法
+class Point {
+public:
+    int x, y;
 
+    Point(int x, int y) : x(x), y(y) {}
+
+    Point operator+(const Point& other) {
+        return Point(x + other.x, y + other.y);
+    }
+    //成员函数版本
+};
+
+friend Point operator+(const Point&, const Point&);
+//非成员函数版本 + 友元函数。。。。。。写在类外
+表达式左边变量类型
+同类则用可用成员函数，非同类则必须用非成员函数
+
+
+这知识点连接的真紧密吧，就决定是你了，友元函数！
+
+a + b
+⬇
+a.operator+(b)
+*/
 
 int main()
 {
