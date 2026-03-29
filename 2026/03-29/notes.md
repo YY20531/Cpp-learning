@@ -9,7 +9,7 @@
 偶列诺time，多隆
 
 
-## 2.重载
+## 🧰2.重载
 >和模板一起有说法吗？
 
 ### I think
@@ -17,10 +17,46 @@
   - 不就是同名的函数变了个参数，
   - 来实现不同类型的变量的相似的功能吗
 - 运算符重载
+  - 有点逆天了，牵扯到好多东西，哇去，好烧脑啊
+  - 友元函数（等着）
+  - 把运算符变成自己类的形状🔥
+ 
+
+### 额外了解到的内容
+<details>
+<summary> cin, cout <<>> </summary>
+  
+---
+  
+- cout 👉 ostream 类型的对象
+- cin 👉 istream 类型的对象
+
+---
+
+cout << a
+
+⬇
+
+调用 operator<<(cout, a)
+
+⬇
+
+返回 cout
+
+⬇
+
+继续 << b
+
+>👉 cout / cin 是对象，而 << / >> 是对它们的运算符重载
+</details>
+
+---
 
 <details>
 <summary>函数模板(waiting for jiesuo)</summary>
-
+  
+---
+  
 模板（泛型编程）
 
 │
