@@ -83,12 +83,12 @@ typename classname :: x = 0;
 
 >AI 还是太好用了😆
 
-### 待定
+### 待定，结束
 <details>
-<summary>迭代器是啥？（以后补）</summary>
+<summary>迭代器是啥？（以后补）---(搞定)</summary>
 
 指针？
-
+[详见Lterator.md](./2026/03-30/Lterator.md/)
 </details>
 
 ## 3.string的了解
