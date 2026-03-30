@@ -7,7 +7,7 @@
 - 模板实现，泛型编程
 
 ### 包括但不限于
-- [vector<T>](2026/03-28/notes.md)
+- [vector<T>](/2026/03-28/notes.md/)
 - sort
 - map<K, V>
 - 。。。。。
