@@ -13,7 +13,7 @@
   
 - classname(const classname &other);
 - 拷贝构造函数是“在需要复制对象时被调用”的，而不是自动乱调用的
-- [构造函数](/2026/04-02/Constructor&&Destructor.md/)
+- [构造函数](./2026/04-02/Constructor&&Destructor.md/)
   
 </details>
 
