@@ -27,11 +27,11 @@
 | 类内static   | 类共享，不属于对象  |
 | 文件全局static | 限制作用域到文件   |
 
-静态函数无法访问非静态变量
+- 静态函数无法访问非静态变量
 
-类里的静态变量要全局初始化
+- 类里的静态变量要全局初始化
 
-typename classname :: x = 0;
+- typename classname :: x = 0;
 
 </details>
 
