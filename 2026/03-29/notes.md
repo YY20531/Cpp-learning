@@ -64,11 +64,11 @@ cout << a
 ---
 
 <details>
-<summary>函数模板(waiting for jiesuo)</summary>
+<summary>函数模板(waiting for jiesuo)--(yi jie suo)</summary>
   
 ---
   
-模板（泛型编程）
+[模板（泛型编程）](2026/03-30/Template.md)
 
 │
 
