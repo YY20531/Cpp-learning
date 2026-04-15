@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基础算法快速上手：二分 (XCPC向 - 开区间模板)</title>
+    
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f7f6;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #2980b9; margin-top: 30px; border-left: 4px solid #2980b9; padding-left: 10px;}
+        h3 { color: #16a085; }
+        code {
+            background: #f8f8f8;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: "Courier New", Courier, monospace;
+            color: #e74c3c;
+        }
+        pre {
+            background: #2d3436;
+            color: #dfe6e9;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+            color: #2980b9;
+        }
+        .highlight { font-weight: bold; color: #d35400; }
+        
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid-container { grid-template-columns: 1fr; }
+        }
+
+        /* 交互区样式 */
+        #visualizer {
+            background: #ebf2f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 1px solid #3498db;
+        }
+        .array-container {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 25px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .box {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #bdc3c7;
+            background: white;
+            font-weight: bold;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .box .label {
+            position: absolute;
+            top: -22px;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        .box .pointer {
+            position: absolute;
+            bottom: -25px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        .dummy-box { background: #34495e; color: #ecf0f1; border-color: #2c3e50; }
+        .out-of-bounds { background: #ecf0f1; color: #bdc3c7; border-color: #eee; }
+        .selected-range { background: #3498db !important; color: white; border-color: #2980b9; }
+        .selected-mid { background: #e67e22 !important; color: white; border-color: #d35400; transform: scale(1.1); z-index: 10;}
+        .selected-found { background: #2ecc71 !important; color: white; border-color: #27ae60; transform: scale(1.1); z-index: 10;}
+        
+        .controls { margin: 20px 0; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        .btn {
+            background: #3498db; color: white; border: none; padding: 8px 15px; 
+            border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s;
+        }
+        .btn:hover { background: #2980b9; }
+        .btn:disabled { background: #bdc3c7; cursor: not-allowed; }
+        .btn-reset { background: #95a5a6; }
+        .btn-reset:hover { background: #7f8c8d; }
+
+        .formula {
+            font-size: 16px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            color: #2c3e50;
+            min-height: 24px;
+        }
+        .tag {
+            display: inline-block;
+            background: #ecf0f1;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-left: 10px;
+            font-weight: normal;
+        }
+        .tag-max { background: #fdebd0; color: #d35400; border: 1px solid #f39c12; }
+        .tag-min { background: #d4efdf; color: #1e8449; border: 1px solid #27ae60; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>核心思想（一句废话没有）</h1>
+    <p><strong>生活类比</strong>：我们在玩“猜数字”游戏，范围是 1 到 100。你猜 50，我告诉你“太大了”；那你接下来肯定猜 25，绝不可能去猜 75。</p>
+    <ul>
+        <li><strong>暴力法</strong>：从 1 猜到 100，最坏情况需要猜 $N$ 次，时间复杂度 $O(N)$。如果有 $M$ 次查询或 $N$ 极大，必吃 TLE。</li>
+        <li><strong>二分法</strong>：每次取中间值测试，将搜索空间直接砍半。最坏情况只需猜 $\log_2 N$ 次。</li>
+    </ul>
+    <p><strong>算法本质</strong>：<span class="highlight">利用单调性（或两段性）排除无效区间</span>。将 $O(N)$ 的线性扫描优化为 $O(\log N)$ 的对数级探测。</p>
+
+    <hr>
+
+    <h2>开区间 <code>l + 1 < r</code> 终极模板</h2>
+    <p>手写整数二分最容易陷入死循环！强烈推荐使用 <strong>(l, r) 开区间模板</strong>（又称红蓝染色法）。核心思想是：<code>l</code> 和 <code>r</code> 分别维护两种不同的颜色（合法与非法），每次将 <code>mid</code> 染成对应的颜色并移动边界。当 <code>l + 1 == r</code> 时，两者相遇，不留死角。</p>
+    
+    <div class="grid-container">
+        <div>
+            <h3>模型一：最小化答案 (找下界)</h3>
+            <p><strong>场景</strong>：找满足条件的最小值（例如：运输能力至少为多少才能运完）。<br>
+            <strong>数组形态</strong>：<code>0 0 0 0 1 1 1 1</code> (0代表不满足，1代表满足)。我们需要找<strong>第一个 1</strong>。<br>
+            <strong>规则</strong>：<code>l</code> 维护 0，<code>r</code> 维护 1。最终答案在 <code>r</code>。</p>
+            <pre>
+ll l = mn - 1; // 永远不满足的虚拟边界
+ll r = mx + 1; // 永远满足的虚拟边界
+
+while (l + 1 < r) {
+    ll mid = (l + r) >> 1;
+    if (check(mid)) {
+        r = mid; // mid满足，说明答案<=mid
+    } else {
+        l = mid; // mid不满足，说明答案>mid
+    }
+}
+// r 是第一个满足条件的最小值
+cout << r << '\n';
+            </pre>
+        </div>
+
+        <div>
+            <h3>模型二：最大化答案 (找上界)</h3>
+            <p><strong>场景</strong>：找满足条件的最大值（例如：木板最长能切多长）。<br>
+            <strong>数组形态</strong>：<code>1 1 1 1 0 0 0 0</code> (1代表满足，0代表不满足)。我们需要找<strong>最后一个 1</strong>。<br>
+            <strong>规则</strong>：<code>l</code> 维护 1，<code>r</code> 维护 0。最终答案在 <code>l</code>。</p>
+            <pre>
+ll l = mn - 1; // 永远满足的虚拟边界
+ll r = mx + 1; // 永远不满足的虚拟边界
+
+while (l + 1 < r) {
+    ll mid = (l + r) >> 1;
+    if (check(mid)) {
+        l = mid; // mid满足，说明答案>=mid
+    } else {
+        r = mid; // mid不满足，说明答案<mid
+    }
+}
+// l 是最后一个满足条件的最大值
+cout << l << '\n';
+            </pre>
+        </div>
+    </div>
+
+    <hr>
+
+    <h2>XCPC 必刷经典题单 (分模型推荐)</h2>
+    <p>算法竞赛中，99% 的二分题都是“二分答案”。把求最优解问题转化为 <code>check(mid)</code> 的可行性判定问题。</p>
+    <ul>
+        <li><strong>Level 1: 基础测试 (STL 熟练度)</strong> 
+            <br><a href="https://www.luogu.com.cn/problem/P2249" target="_blank">洛谷 P2249 - 【深基13.例1】查找</a> 
+            <span class="tag tag-min">模型一：找第一个大于等于</span>
+            <br><em>评语：可以用来测试你的手写“最小化答案”模板，或者直接熟练使用 <code>std::lower_bound</code>。</em>
+        </li>
+        <li style="margin-top: 10px;"><strong>Level 2: 最大化答案入门</strong> 
+            <br><a href="https://www.luogu.com.cn/problem/P2440" target="_blank">洛谷 P2440 - 木材加工</a> 
+            <span class="tag tag-max">模型二：最大化长度</span>
+            <br><em>评语：经典 <code>11110000</code> 形态。切的长度越短越能满足，越长越不能满足。套用模型二，求最大满足长度 <code>l</code>。</em>
+        </li>
+        <li style="margin-top: 10px;"><strong>Level 3: 最小化最大值 (经典中的经典)</strong> 
+            <br><a href="https://atcoder.jp/contests/abc174/tasks/abc174_e" target="_blank">AtCoder ABC 174 E - Logs</a> 
+            <span class="tag tag-min">模型一：最小化答案</span>
+            <br><em>评语：把原木切 $K$ 次，求最长木头的最小可能长度。限制越宽松（设定的长度越长），切的次数越少。典型的 <code>00001111</code> 形态，套用模型一，求最小合法长度 <code>r</code>。</em>
+        </li>
+        <li style="margin-top: 10px;"><strong>Level 4: 最大化最小值 (NOIP名题)</strong> 
+            <br><a href="https://www.luogu.com.cn/problem/P2678" target="_blank">洛谷 P2678 - [NOIP2015 提高组] 跳石头</a> 
+            <span class="tag tag-max">模型二：最大化最短距离</span>
+            <br><em>评语：全国 Oier 的童年回忆。设定的最短跳跃距离 <code>mid</code> 越小越容易满足（移走石头少）。套用模型二，在 <code>check(mid)</code> 中判断移走石头数是否 $\le M$。</em>
+        </li>
+        <li style="margin-top: 10px;"><strong>Level 5: 综合变形应用 (贪心+二分)</strong> 
+            <br><a href="https://codeforces.com/problemset/problem/1201/C" target="_blank">Codeforces 1201C - Maximum Median</a> 
+            <span class="tag tag-max">模型二：最大化中位数</span>
+            <br><em>评语：CF 常见套路。二分最终的中位数 <code>mid</code>，然后计算把原数组中位数提升到 <code>mid</code> 需要多少代价，与允许的总代价 <code>K</code> 比较。</em>
+        </li>
+    </ul>
+
+    <hr>
+
+    <h2>交互式推导演示 (以模型一：找下界为例)</h2>
+    <div id="visualizer">
+        <div class="controls">
+            <label>请选择要查找的目标值: 
+                <select id="inputTarget">
+                    <option value="5">5</option>
+                    <option value="16">16</option>
+                    <option value="56" selected>56</option>
+                    <option value="91">91</option>
+                    <option value="25">25 (不存在的值)</option>
+                </select>
+            </label>
+            <button class="btn" id="btnStep" onclick="nextStep()">运行二分搜索 (下一步)</button>
+            <button class="btn btn-reset" id="btnReset" onclick="resetSim()">重置</button>
+        </div>
+
+        <h3>有序数组 A (虚拟边界 0 与 11):</h3>
+        <div class="array-container" id="arrayA"></div>
+
+        <div class="formula" id="formulaBox">
+            点击“下一步”开始演示
+        </div>
+    </div>
+
+    <hr>
+
+    <h2>赛场避坑指南 (WA / TLE 警告)</h2>
+    <h3>1. <code>l + r</code> 溢出警告 (爆 int)</h3>
+    <p>虽然 <code>ll mid = (l + r) >> 1;</code> 运行极快，但当 <code>l</code> 和 <code>r</code> 都接近 $2 \times 10^9$ 时，如果用 <code>int</code> 存储，<code>l + r</code> 会直接溢出成负数。在 XCPC 中，如果答案范围达到了 $10^9$，<strong>务必将 <code>l</code>、<code>r</code>、<code>mid</code> 都开成 <code>long long</code></strong>。</p>
+    <h3>2. 虚拟边界的取值</h3>
+    <p><code>mn - 1</code> 和 <code>mx + 1</code> 一定要能涵盖所有可能的情况！如果答案可能是 0，那 <code>l</code> 至少要从 -1 开始；如果答案最大可能到 $10^{18}$，<code>r</code> 就要开到 $10^{18} + 1$。</p>
+    <h3>3. 单调性不严格</h3>
+    <p>必须确保 <code>check()</code> 函数的结果呈现<strong>绝对的两段性</strong>（要么是 <code>00001111</code>，要么是 <code>11110000</code>）。如果你发现它不满足两段性（例如：1 0 1 1 0 0），说明不能直接二分，可能需要结合其他算法（如贪心、DP）来维持局部单调性，或者完全换思路。</p>
+
+</div>
+
+<script>
+    // 实际数据长度 10，索引 1~10。我们在 0 和 11 放置虚拟边界。
+    const a = [Number.NEGATIVE_INFINITY, 2, 5, 8, 12, 16, 23, 38, 56, 72, 91, Number.POSITIVE_INFINITY]; 
+    let l, r, mid, target, state, stepCount;
+
+    function resetSim() {
+        target = parseInt(document.getElementById('inputTarget').value);
+        l = 0;   // mn - 1
+        r = 11;  // mx + 1
+        stepCount = 0;
+        state = 'calc_mid'; // 状态: calc_mid, check, done
+        document.getElementById('btnStep').disabled = false;
+        document.getElementById('btnStep').innerText = "运行二分搜索 (下一步)";
+        
+        renderArray();
+        document.getElementById('formulaBox').innerHTML = `初始状态： 左哨兵 l = ${l}, 右哨兵 r = ${r}。<br>目标值 Target = ${target}。注意：当前搜索开区间为 (${l}, ${r})`;
+    }
+
+    function nextStep() {
+        if (l + 1 >= r) {
+            // 模型一：寻找 >= target 的第一个数，答案在 r
+            if (r >= 1 && r <= 10 && a[r] === target) {
+                document.getElementById('formulaBox').innerHTML = `<strong>l + 1 == r (${l} + 1 == ${r})，搜索结束。</strong><br><span style="color:#2ecc71">A[${r}] == Target (${a[r]} == ${target})。 查找成功！共耗时 ${stepCount} 步。</span>`;
+                state = 'found';
+            } else {
+                document.getElementById('formulaBox').innerHTML = `<strong>l + 1 == r (${l} + 1 == ${r})，搜索结束。</strong><br><span style="color:#e74c3c">寻找到的下界（第一个 >= ${target} 的值）是 A[${r}]。由于 A[${r}] != ${target}，数组中不存在 ${target}！</span>`;
+                state = 'not_found';
+            }
+            renderArray();
+            document.getElementById('btnStep').disabled = true;
+            return;
+        }
+
+        if (state === 'calc_mid') {
+            mid = (l + r) >> 1;
+            renderArray();
+            document.getElementById('formulaBox').innerHTML = `计算中点： mid = (${l} + ${r}) >> 1 = <strong>${mid}</strong>。此时 A[${mid}] = ${a[mid]}`;
+            state = 'check';
+        } else if (state === 'check') {
+            stepCount++;
+            let val = a[mid];
+            // 模型一：check(mid) 定义为 A[mid] >= target
+            if (val >= target) {
+                r = mid;
+                renderArray();
+                document.getElementById('formulaBox').innerHTML = `check(${mid}) 为 <strong>真(1)</strong>：A[${mid}] >= Target (${val} >= ${target})。<br>说明答案在左侧或就是此位置，更新右边界 <strong>r = mid = ${r}</strong>。`;
+            } else {
+                l = mid;
+                renderArray();
+                document.getElementById('formulaBox').innerHTML = `check(${mid}) 为 <strong>假(0)</strong>：A[${mid}] < Target (${val} < ${target})。<br>说明答案严格在右侧，更新左边界 <strong>l = mid = ${l}</strong>。`;
+            }
+            state = 'calc_mid';
+            
+            if(l + 1 >= r) {
+                document.getElementById('btnStep').innerText = "结束验证并输出答案";
+            }
+        }
+    }
+
+    function renderArray() {
+        const container = document.getElementById('arrayA');
+        container.innerHTML = '';
+        
+        a.forEach((val, idx) => {
+            const box = document.createElement('div');
+            let cls = 'box';
+            let pointers = [];
+
+            // 0 和 11 是虚拟边界
+            if (idx === 0 || idx === 11) {
+                cls += ' dummy-box';
+                val = (idx === 0) ? "-∞" : "+∞";
+            } 
+            // 在开区间之外的（<=l 或者 >=r），且不是刚才找到的结果，标记为越界
+            else if (idx <= l || idx >= r) {
+                cls += ' out-of-bounds';
+            } else {
+                cls += ' selected-range';
+            }
+
+            // 指针逻辑
+            if (idx === l && state !== 'found' && state !== 'not_found') pointers.push('l');
+            if (idx === r && state !== 'found' && state !== 'not_found') pointers.push('r');
+            
+            if (state === 'check' || state === 'found' || state === 'not_found') {
+                if (idx === mid && state === 'check') {
+                    cls = 'box selected-mid';
+                    pointers.push('mid');
+                }
+                if (idx === r && state === 'found') {
+                    cls = 'box selected-found';
+                }
+            }
+
+            box.className = cls;
+            
+            let ptrHtml = '';
+            if (pointers.length > 0) {
+                // 如果是左边界 l，使用红色表示非法；如果是右边界 r，使用绿色表示合法；mid 用橙色
+                let ptrColor = pointers.includes('mid') ? '#d35400' : (pointers.includes('l') ? '#e74c3c' : '#27ae60');
+                ptrHtml = `<span class="pointer" style="color:${ptrColor}">${pointers.join(',')}</span>`;
+            }
+
+            box.innerHTML = `<span class="label">${idx}</span>${val}${ptrHtml}`;
+            container.appendChild(box);
+        });
+    }
+
+    document.getElementById('inputTarget').onchange = resetSim;
+    
+    // Init
+    resetSim();
+</script>
+
+</body>
+</html>
