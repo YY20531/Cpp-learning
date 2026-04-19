@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基础算法快速上手：差分数组 (XCPC向)</title>
+    
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f7f6;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #2980b9; margin-top: 30px; }
+        h3 { color: #16a085; }
+        code {
+            background: #f8f8f8;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: "Courier New", Courier, monospace;
+            color: #e74c3c;
+        }
+        pre {
+            background: #2d3436;
+            color: #dfe6e9;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+            color: #2980b9;
+        }
+        .highlight { font-weight: bold; color: #d35400; }
+        
+        /* 交互区样式 */
+        #visualizer {
+            background: #ebf2f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 1px solid #3498db;
+        }
+        .array-container {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .box {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #bdc3c7;
+            background: white;
+            font-weight: bold;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .box .label {
+            position: absolute;
+            top: -20px;
+            font-size: 10px;
+            color: #7f8c8d;
+        }
+        .selected-range { background: #3498db !important; color: white; border-color: #2980b9; }
+        .selected-diff-plus { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .selected-diff-minus { background: #e74c3c !important; color: white; border-color: #c0392b; }
+        .controls { margin: 20px 0; display: flex; gap: 20px; align-items: center; }
+        .formula {
+            font-size: 16px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .tag {
+            display: inline-block;
+            background: #ecf0f1;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-left: 10px;
+            font-weight: normal;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>核心思想（一句废话没有）</h1>
+    <p><strong>生活类比</strong>：假设你是一辆公交车的售票员，你不需要在每一站都去数车上一共有多少人。你只需要记下“这站上来了几个人（加法），下去了几个人（减法）”。</p>
+    <ul>
+        <li><strong>暴力法</strong>：要给区间 $[L, R]$ 内的所有数字加上 $V$，写个 `for` 循环挨个加。如果有 $M$ 次区间修改，时间复杂度是 $O(N \times M)$，必吃 TLE（Time Limit Exceeded）。</li>
+        <li><strong>差分法</strong>：构造一个“变化量”数组。在 $L$ 处放一个 $+V$ 的标记（代表从这开始加上 $V$），在 $R+1$ 处放一个 $-V$ 的标记（代表加 $V$ 的效果到此结束）。最后从头到尾扫一遍（求前缀和），就能还原出修改后的原数组。</li>
+    </ul>
+    <p><strong>算法本质</strong>：<span class="highlight">区间操作转化为单点操作</span>。将 $O(N)$ 的区间修改降维成 $O(1)$ 的端点修改，是前缀和的逆运算。</p>
+
+    <hr>
+
+    <h2>XCPC 竞赛中的应用场景</h2>
+    <p>在各类算法竞赛中，差分常常是处理<strong>“频繁修改，一次查询”</strong>（离线操作）的核心利器。常见套路包括：</p>
+    <ul>
+        <li><strong>二维/多维差分</strong>：结合容斥原理，将二维矩阵的区域加法转换为 4 个顶点的单点修改，常用于处理二维图纸上的涂色、覆盖问题。</li>
+        <li><strong>树上差分</strong>：将数组上的差分推广到树的路径上，结合 LCA（最近公共祖先），可以 $O(1)$ 修改树上两点之间路径的权值，最后通过一遍 DFS 回溯还原整棵树的权值。</li>
+        <li><strong>多次差分（二阶差分）</strong>：如果题目要求在区间内加上一个“等差数列”（如依次加 1, 2, 3...），对一阶差分数组再做一次差分，就能把等差数列的修改转化为常数次单点修改。</li>
+        <li><strong>扫描线与区间重叠</strong>：给定大量区间，求重叠次数最多的部分。只需在起点 $+1$，终点后一位 $-1$，求前缀和的最大值即可。</li>
+    </ul>
+
+    <hr>
+
+    <h2>XCPC 必刷经典题单</h2>
+    <p>以下题目涵盖了差分在竞赛中的主流变形考察点，建议按顺序推进：</p>
+    <ul>
+        <li><strong>Level 1: 基础测试</strong> 
+            <br><a href="https://www.luogu.com.cn/problem/P2367" target="_blank">洛谷 P2367 - 语文成绩</a> <span class="tag">1D差分模板</span>
+            <br><em>评语：纯粹的区间加法模板题，用来熟练掌握 <code>D[L] += V; D[R+1] -= V;</code> 的端点修改和最终的前缀和还原。</em>
+        </li>
+        <li style="margin-top: 10px;"><strong>Level 2: 维度跃升</strong> 
+            <br><a href="https://www.luogu.com.cn/problem/P3397" target="_blank">洛谷 P3397 - 地毯</a> <span class="tag">2D差分</span>
+            <br><em>评语：二维差分入门。核心是理解二维修改公式：<code>D[x1][y1] += 1; D[x2+1][y1] -= 1; D[x1][y2+1] -= 1; D[x2+1][y2+1] += 1;</code>。</em>
+        </li>
+        <li style="margin-top: 10px;"><strong>Level 3: 贪心 + 排序 + 差分</strong> 
+            <br><a href="https://codeforces.com/problemset/problem/276/C" target="_blank">Codeforces 276C - Little Girl and Maximum Sum</a> <span class="tag">差分求覆盖频次</span>
+            <br><em>评语：非常经典的CF思维题。通过差分求出每个位置被查询的“频次”，然后把原数组中最大的数放在频次最高的位置上，贪心求最大总和。</em>
+        </li>
+        <li style="margin-top: 10px;"><strong>Level 4: 树上路径修改</strong> 
+            <br><a href="https://www.luogu.com.cn/problem/P3128" target="_blank">洛谷 P3128 - [USACO15DEC] Max Flow P</a> <span class="tag">树上差分 + LCA</span>
+            <br><em>评语：树上点权差分的必刷题。路径 $u$ 到 $v$ 加 1，操作变为 <code>D[u]++, D[v]++, D[lca(u,v)]--, D[parent(lca)]--</code>。</em>
+        </li>
+        <li style="margin-top: 10px;"><strong>Level 5: 进阶数学规律</strong> 
+            <br><a href="https://www.luogu.com.cn/problem/P4231" target="_blank">洛谷 P4231 - 三步必杀</a> <span class="tag">二阶差分</span>
+            <br><em>评语：处理区间加上等差数列的黑科技。差分数组的差分，做两次前缀和还原，是对数学功底的极好试金石。</em>
+        </li>
+    </ul>
+
+    <hr>
+
+    <h2>模板代码（C++ 版本）</h2>
+    <p>和前缀和一样，强烈推荐使用 <strong>1-based 索引（下标从 1 开始）</strong>。并且差分数组必须比原数组<strong>多开 2 个位置</strong>，以防 $R+1$ 越界。</p>
+    <pre>
+#include &lt;iostream&gt;
+#include &lt;vector&gt;
+
+using namespace std;
+typedef long long ll; 
+
+int main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    int n = 5; // 原数组长度
+    // 假设初始数组全为 0。如果初始数组有值，可以直接视作进行了 n 次 [i, i] 的单点区间加法。
+    vector&lt;ll&gt; a(n + 2, 0); 
+    vector&lt;ll&gt; diff(n + 2, 0); // 差分数组，大小必须开到 n+2
+    
+    int q = 2; // 假设有 q 次区间修改操作
+    // 操作 1: 区间 [2, 4] 加上 10
+    int L1 = 2, R1 = 4; ll V1 = 10;
+    diff[L1] += V1;
+    diff[R1 + 1] -= V1; // R+1 的位置减去 V
+
+    // 操作 2: 区间 [3, 5] 加上 5
+    int L2 = 3, R2 = 5; ll V2 = 5;
+    diff[L2] += V2;
+    diff[R2 + 1] -= V2;
+    
+    // 最终：通过对差分数组求前缀和，还原出最终的原数组 a
+    for (int i = 1; i <= n; i++) {
+        a[i] = a[i - 1] + diff[i]; 
+        cout << a[i] << " ";
+    }
+    // 输出应为: 0 10 15 15 5
+    
+    return 0;
+}
+    </pre>
+
+    <hr>
+
+    <h2>交互式推导演示</h2>
+    <p>假设有一个长度为 8 且初始全为 0 的数组。尝试修改起始位置 $L$ 和结束位置 $R$，对该区间执行 <strong>$+10$</strong> 操作，观察底层的<strong>差分数组 $D$</strong> 是如何工作的：</p>
+    <div id="visualizer">
+        <div class="controls">
+            <label>起始位置 L: <input type="range" id="inputL" min="1" max="8" value="2"></label>
+            <span id="valL">2</span>
+            <label>结束位置 R: <input type="range" id="inputR" min="1" max="8" value="5"></label>
+            <span id="valR">5</span>
+        </div>
+
+        <h3>1. 差分数组 D (单点修改 $D[L] += 10$, $D[R+1] -= 10$):</h3>
+        <div class="array-container" id="arrayD"></div>
+
+        <h3>2. 还原后的原数组 A (由 $D$ 跑前缀和得出):</h3>
+        <div class="array-container" id="arrayA"></div>
+
+        <div class="formula" id="formulaBox">
+            修改操作：D[L] += 10，D[R+1] -= 10 <br>
+            还原公式：A[i] = A[i-1] + D[i]
+        </div>
+    </div>
+
+    <hr>
+
+    <h2>赛场避坑指南 (WA / RE 警告)</h2>
+    <h3>1. $R+1$ 越界导致段错误 (RE)</h3>
+    <p>差分修改时必写 <code>D[R+1] -= V</code>，如果 $R = N$，那么 $R+1 = N+1$。如果你的数组严格只开了 $N$ 大小，这里就会数组越界引发 RE 或者覆盖其它变量。<strong>习惯性把数组大小开到 $N+5$</strong>。</p>
+    <h3>2. 离线与在线的混淆</h3>
+    <p>差分数组只适用于<strong>离线操作</strong>（即：先把所有的“区间修改”全做完，最后只做一次“查询”求前缀和）。如果题目要求边修改边查询（例如：改一下区间，问一下单点，再改一下区间），差分数组会退化回 $O(N)$，此时必须上<strong>树状数组 (BIT)</strong> 或 <strong>线段树</strong>。</p>
+    <h3>3. 忘记还原数组 (WA)</h3>
+    <p>差分数组 <code>D</code> 记录的只是变化量！输出最终结果时，务必记得跑一遍 <code>for(i=1~N) a[i] = a[i-1] + d[i];</code>，不要直接把 <code>D</code> 数组当答案输出了。</p>
+
+    <hr>
+
+    <h2>复杂度分析</h2>
+    <ul>
+        <li><strong>时间复杂度</strong>：单次区间修改 $O(1)$。$M$ 次修改后，最后求一次前缀和还原数组 $O(N)$。总耗时 $O(N + M)$。</li>
+        <li><strong>空间复杂度</strong>：$O(N)$，需要开一个与原数组同等规模的差分数组。</li>
+    </ul>
+</div>
+
+<script>
+    function update() {
+        let L = parseInt(document.getElementById('inputL').value);
+        let R = parseInt(document.getElementById('inputR').value);
+        const V = 10;
+        
+        // 保证 L <= R
+        if (L > R) {
+            L = R;
+            document.getElementById('inputL').value = L;
+        }
+
+        document.getElementById('valL').innerText = L;
+        document.getElementById('valR').innerText = R;
+
+        // 构建差分数组 (大小为 10，索引 0~9 覆盖所有 R+1 的可能)
+        let d = new Array(10).fill(0);
+        d[L] += V;
+        if (R + 1 <= 9) {
+            d[R + 1] -= V;
+        }
+
+        // 构建原数组 (大小为 9，索引 0~8)
+        let a = new Array(9).fill(0);
+        for (let i = 1; i <= 8; i++) {
+            a[i] = a[i - 1] + d[i];
+        }
+
+        // 渲染差分数组 D
+        const containerD = document.getElementById('arrayD');
+        containerD.innerHTML = '';
+        for (let i = 1; i <= 9; i++) {
+            const box = document.createElement('div');
+            let cls = 'box';
+            if (i === L) cls += ' selected-diff-plus';
+            if (i === R + 1) cls += ' selected-diff-minus';
+            box.className = cls;
+            
+            let valStr = d[i] > 0 ? `+${d[i]}` : d[i].toString();
+            box.innerHTML = `<span class="label">${i}</span>${valStr}`;
+            containerD.appendChild(box);
+        }
+
+        // 渲染原数组 A
+        const containerA = document.getElementById('arrayA');
+        containerA.innerHTML = '';
+        for (let i = 1; i <= 8; i++) {
+            const box = document.createElement('div');
+            let cls = 'box';
+            if (i >= L && i <= R) cls += ' selected-range';
+            box.className = cls;
+            box.innerHTML = `<span class="label">${i}</span>${a[i]}`;
+            containerA.appendChild(box);
+        }
+
+        // 更新公式区域
+        document.getElementById('formulaBox').innerHTML = 
+            `步骤 1: <span style="color:#27ae60">D[${L}] += 10</span>, <span style="color:#c0392b">D[${R+1}] -= 10</span> <br>` +
+            `步骤 2: 遍历求和还原，例如 A[${L}] = A[${L-1}] + D[${L}] = ${a[L-1]} + ${d[L]} = ${a[L]}`;
+    }
+
+    document.getElementById('inputL').oninput = update;
+    document.getElementById('inputR').oninput = update;
+    update();
+</script>
+
+</body>
+</html>
