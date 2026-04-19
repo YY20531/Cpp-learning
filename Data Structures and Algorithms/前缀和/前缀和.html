@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基础算法快速上手：前缀和</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f7f6;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #2980b9; margin-top: 30px; }
+        h3 { color: #16a085; }
+        code {
+            background: #f8f8f8;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: "Courier New", Courier, monospace;
+            color: #e74c3c;
+        }
+        pre {
+            background: #2d3436;
+            color: #dfe6e9;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+            color: #2980b9;
+        }
+        .highlight { font-weight: bold; color: #d35400; }
+        
+        /* 交互区样式 */
+        #visualizer {
+            background: #ebf2f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 1px solid #3498db;
+        }
+        .array-container {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .box {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #bdc3c7;
+            background: white;
+            font-weight: bold;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .box .label {
+            position: absolute;
+            top: -20px;
+            font-size: 10px;
+            color: #7f8c8d;
+        }
+        .selected-range { background: #3498db !important; color: white; border-color: #2980b9; }
+        .selected-prefix { background: #e67e22 !important; color: white; border-color: #d35400; }
+        .controls { margin: 20px 0; display: flex; gap: 20px; align-items: center; }
+        .formula {
+            font-size: 18px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>核心思想</h1>
+    <p><strong>生活类比</strong>：假设你在记账，想知道“本月 5 号到 15 号一共花了多少钱”。</p>
+    <ul>
+        <li><strong>普通人的做法（暴力法）</strong>：把 5 号到 15 号的账单翻出来，一笔一笔相加。每次问你，你都要重加一遍。</li>
+        <li><strong>XuRia(Goat)的做法（前缀和）</strong>：每天记账时，顺手记下“从 1 号到今天总共花了多少钱”。查询时只需用 <strong>“15 号总额” 减去 “4 号总额”</strong>。</li>
+    </ul>
+    <p><strong>算法本质</strong>：<span class="highlight">空间换时间</span>。预处理时间复杂度 O(N)，查询时间复杂度 O(1)。</p>
+
+    <hr>
+
+    <h2>算法竞赛中的应用场景</h2>
+    <p>在算法竞赛（如 ACM/ICPC、蓝桥杯、LeetCode 周赛）中，前缀和极少作为单独的考点，而是作为优化的底层基础设施。常见应用场景包括：</p>
+    <ul>
+        <li><strong>频繁的区间求和查询</strong>：如果题目要求对同一个数组进行多次区间查询，直接遍历一定会超时（TLE），前缀和是此类操作的标配。</li>
+        <li><strong>配合哈希表查找特定子数组</strong>：例如经典问题“求和为 K 的连续子数组个数”。通过将区间和公式变形为 <code>prefix[R] - K = prefix[L-1]</code>，配合哈希表记录扫过的前缀和出现的次数，可以将 O(N^2) 的算法降维到 O(N)。</li>
+        <li><strong>差分数组的逆运算</strong>：在对区间进行频繁的加减操作后，对差分数组求一次前缀和，即可在 O(N) 时间内还原出最终的数组状态。</li>
+    </ul>
+
+    <hr>
+
+    <h2>经典竞赛例题</h2>
+    <ul>
+        <li><strong>入门模板</strong>：<a href="https://www.luogu.com.cn/problem/P8218" target="_blank">洛谷 P8218 - 【深进1.例1】求区间和</a> （适合用来测试自己写的模板是否有 Bug）</li>
+        <li><strong>基础封装</strong>：<a href="https://leetcode.cn/problems/range-sum-query-immutable/" target="_blank">LeetCode 303 - 区域和检索 (数组不可变)</a> （考察面向对象编程中的前缀和封装）</li>
+        <li><strong>进阶应用</strong>：<a href="https://leetcode.cn/problems/subarray-sum-equals-k/" target="_blank">LeetCode 560 - 和为 K 的子数组</a> （高频面试题：前缀和 + 哈希表优化的经典结合）</li>
+    </ul>
+
+    <hr>
+
+    <h2>模板代码（C++ 版本）</h2>
+    <p>推荐使用 <strong>1-based 索引</strong>，这是写前缀和最优雅且不易出错的方式。</p>
+    <pre>
+#include &lt;iostream&gt;
+#include &lt;vector&gt;
+
+using namespace std;
+
+int main() {
+    int n = 8; 
+    vector&lt;int&gt; nums = {0, 3, 1, 4, 1, 5, 9, 2, 6}; // 0位占位
+    
+    // 1. 预处理前缀和数组
+    vector&lt;long long&gt; prefix(n + 1, 0); 
+    for (int i = 1; i <= n; i++) {
+        prefix[i] = prefix[i - 1] + nums[i]; 
+    }
+    
+    // 2. 查询区间 [L, R]
+    int L = 2, R = 5;
+    long long sum = prefix[R] - prefix[L - 1]; 
+    
+    cout << "Sum: " << sum << endl;
+    return 0;
+}
+    </pre>
+
+    <hr>
+
+    <h2>交互式演示</h2>
+    <p>调整下面的起始位置 L 和结束位置 R 观察计算过程：</p>
+    <div id="visualizer">
+        <div class="controls">
+            <label>起始位置 L: <input type="range" id="inputL" min="1" max="8" value="2"></label>
+            <span id="valL">2</span>
+            <label>结束位置 R: <input type="range" id="inputR" min="1" max="8" value="5"></label>
+            <span id="valR">5</span>
+        </div>
+
+        <h3>原数组 A (1-based):</h3>
+        <div class="array-container" id="arrayA"></div>
+
+        <h3>前缀和数组 S (0-based):</h3>
+        <div class="array-container" id="arrayS"></div>
+
+        <div class="formula" id="formulaBox">
+            区间和 = S[R] - S[L-1] = ?
+        </div>
+    </div>
+
+    <hr>
+
+    <h2>易错点避坑指南</h2>
+    <h3>1. 数组越界</h3>
+    <p>如果 L=1，公式会访问 <code>prefix[0]</code>。<strong>这就是为什么要多开一位空间！</strong> 让 <code>prefix[0] = 0</code>，代码就不需要特判 L 是否为 1，逻辑可以直接自洽。</p>
+    <h3>2. 数据溢出</h3>
+    <p>在算法竞赛中，多个 <code>int</code> 相加极易超过整型最大值（约 2x10^9）。前缀和数组请务必习惯性使用 <code style="color:blue">long long</code> 进行声明。</p>
+
+    <hr>
+
+    <h2>复杂度分析</h2>
+    <ul>
+        <li><strong>时间复杂度</strong>：预处理阶段遍历原数组，时间复杂度为 O(N)。单次查询仅需一次减法，时间复杂度为 O(1)。</li>
+        <li><strong>空间复杂度</strong>：需要开辟大小为 N+1 的数组存储前缀和，空间复杂度为 O(N)。</li>
+    </ul>
+</div>
+
+<script>
+    const a = [3, 1, 4, 1, 5, 9, 2, 6];
+    const s = [0, 3, 4, 8, 9, 14, 23, 25, 31];
+
+    function update() {
+        let L = parseInt(document.getElementById('inputL').value);
+        let R = parseInt(document.getElementById('inputR').value);
+        
+        // 保证 L <= R
+        if (L > R) {
+            L = R;
+            document.getElementById('inputL').value = L;
+        }
+
+        document.getElementById('valL').innerText = L;
+        document.getElementById('valR').innerText = R;
+
+        // 渲染原数组
+        const containerA = document.getElementById('arrayA');
+        containerA.innerHTML = '';
+        a.forEach((val, i) => {
+            const idx = i + 1;
+            const box = document.createElement('div');
+            box.className = 'box' + (idx >= L && idx <= R ? ' selected-range' : '');
+            box.innerHTML = `<span class="label">${idx}</span>${val}`;
+            containerA.appendChild(box);
+        });
+
+        // 渲染前缀和数组
+        const containerS = document.getElementById('arrayS');
+        containerS.innerHTML = '';
+        s.forEach((val, i) => {
+            const box = document.createElement('div');
+            let cls = 'box';
+            if (i === R) cls += ' selected-prefix';
+            if (i === L - 1) cls += ' selected-prefix';
+            box.className = cls;
+            box.innerHTML = `<span class="label">${i}</span>${val}`;
+            containerS.appendChild(box);
+        });
+
+        // 更新公式
+        const result = s[R] - s[L-1];
+        document.getElementById('formulaBox').innerHTML = 
+            `区间 [${L}, ${R}] 的和 = S[${R}] - S[${L-1}] = ${s[R]} - ${s[L-1]} = ${result}`;
+    }
+
+    document.getElementById('inputL').oninput = update;
+    document.getElementById('inputR').oninput = update;
+    update();
+</script>
+
+</body>
+</html>
