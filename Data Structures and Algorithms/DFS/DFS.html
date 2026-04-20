@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基础算法快速上手：深度优先搜索 (DFS)</title>
+    
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f7f6;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #2980b9; margin-top: 30px; }
+        h3 { color: #16a085; }
+        code {
+            background: #f8f8f8;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: "Courier New", Courier, monospace;
+            color: #e74c3c;
+        }
+        pre {
+            background: #2d3436;
+            color: #dfe6e9;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+            color: #2980b9;
+        }
+        .highlight { font-weight: bold; color: #d35400; }
+        
+        /* 交互区样式 */
+        #visualizer {
+            background: #ebf2f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 1px solid #3498db;
+        }
+        .array-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            min-height: 42px;
+        }
+        .box {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #bdc3c7;
+            background: white;
+            font-weight: bold;
+            transition: all 0.3s;
+            position: relative;
+            border-radius: 6px;
+        }
+        .box .label {
+            position: absolute;
+            top: -20px;
+            font-size: 10px;
+            color: #7f8c8d;
+        }
+        .path-box { background: #3498db !important; color: white; border-color: #2980b9; }
+        .used-true { background: #e74c3c !important; color: white; border-color: #c0392b; }
+        .used-false { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .controls { margin: 20px 0; display: flex; gap: 20px; align-items: center; }
+        input[type="range"] { flex-grow: 1; cursor: pointer; }
+        .formula {
+            font-size: 16px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            color: #2c3e50;
+            min-height: 24px;
+        }
+        .tag {
+            display: inline-block;
+            background: #ecf0f1;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-left: 10px;
+            font-weight: normal;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>核心思想</h1>
+    <p><strong>生活类比</strong>：假设你在走一个巨大且没有地图的迷宫。你的策略是“不撞南墙不回头”：沿着一条路一直走到底，如果发现是死胡同，就退回到上一个岔路口（这个动作叫<strong>回溯</strong>），换另一条路继续走。直到找到出口或者遍历完所有的死胡同。</p>
+    <ul>
+        <li><strong>广度优先 (BFS)</strong>：像水波纹一样，一层一层往外扩张（需要队列）。</li>
+        <li><strong>深度优先 (DFS)</strong>：像钻头一样，一条道走到黑，到底后原路拔出再钻下一个孔（需要栈/递归）。</li>
+    </ul>
+    <p><strong>算法本质</strong>：<span class="highlight">递归与回溯</span>。隐式地利用了操作系统的函数调用栈来记录走过的“岔路口”，在穷举搜索和图的连通性分析中是绝对的基石。</p>
+
+    <hr>
+
+    <h2>竞赛中的应用场景</h2>
+    <p>在算法竞赛中，DFS 主要解决<strong>“走迷宫”、“穷举所有可能”</strong>以及<strong>“树/图的遍历”</strong>问题。常见套路包括：</p>
+    <ul>
+        <li><strong>暴力枚举 (搜索)</strong>：求全排列、求子集、凑数字组合等。当问题规模不大（通常 $N \le 20$）且需要列出所有合法方案时，DFS 是第一选择。</li>
+        <li><strong>图与网格遍历 (Flood Fill)</strong>：扫雷游戏中点开一片空白块、计算图像中的连通色块数量（连通分量）。</li>
+        <li><strong>树上操作</strong>：找树的重心、预处理 LCA（最近公共祖先）、树上动态规划（Tree DP）。由于树天然具有递归结构，DFS 是处理树结构最直观的工具。</li>
+        <li><strong>记忆化搜索</strong>：DFS 与动态规划的结合体。通过一个数组记录已经计算过的分支结果，如果下次再 DFS 到这里直接返回，从而将指数级复杂度降维到多项式级别。</li>
+    </ul>
+
+    <hr>
+
+    <h2>必刷经典题单</h2>
+    <p>以下题目涵盖了 DFS 在竞赛中的核心考点，特别是从纯暴力到带有“剪枝”优化的进阶：</p>
+    <ul>
+        <li><strong>Level 1: 纯享递归与回溯</strong> 
+            <br><a href="https://www.luogu.com.cn/problem/P1706" target="_blank">洛谷 P1706 - 全排列问题</a> <span class="tag">DFS 模板</span>
+            <br><em>评语：回溯法的启蒙题。深刻理解 <code>used[i]=true</code>（做选择）和 <code>used[i]=false</code>（撤销选择，恢复现场）的意义。</em>
+        </li>
+        <li style="margin-top: 10px;"><strong>Level 2: 二维棋盘搜索</strong> 
+            <br><a href="https://www.luogu.com.cn/problem/P1219" target="_blank">洛谷 P1219 - 八皇后</a> <span class="tag">经典回溯</span>
+            <br><em>评语：世界级经典题。难点在于如何巧妙地用数组来 $O(1)$ 判定对角线上是否已经放置了皇后。</em>
+        </li>
+        <li style="margin-top: 10px;"><strong>Level 3: 网格与连通块</strong> 
+            <br><a href="https://www.luogu.com.cn/problem/P1331" target="_blank">洛谷 P1331 - 海战</a> <span class="tag">Flood Fill</span>
+            <br><em>评语：典型的网格图 DFS，不仅要利用 DFS 找到连通的船只，还需要在遍历过程中判定形状是否合法。</em>
+        </li>
+        <li style="margin-top: 10px;"><strong>Level 4: 剪枝的艺术</strong> 
+            <br><a href="https://www.luogu.com.cn/problem/P1120" target="_blank">洛谷 P1120 - 小木棍</a> <span class="tag">高级剪枝</span>
+            <br><em>评语：CSP/NOIP 必刷神题。不剪枝只能拿 20 分。需要极强的优化思维（可行性剪枝、最优性剪枝、排除等效冗余）来约束 DFS 庞大的搜索树。</em>
+        </li>
+    </ul>
+
+    <hr>
+
+    <h2>模板代码（C++ 版本）</h2>
+    <p>这是生成“全排列”的经典回溯模板。请死记 <strong>“递归终止 -> 遍历选项 -> 做出选择 -> 递归进入 -> 撤销选择”</strong> 这个标准五步框架。</p>
+    <pre>
+#include &lt;iostream&gt;
+#include &lt;vector&gt;
+
+using namespace std;
+
+int n = 3; 
+vector&lt;int&gt; path; // 记录当前走过的路径 (相当于系统栈)
+vector&lt;bool&gt; used(n + 1, false); // 记录数字是否已经被使用
+
+void dfs(int depth) {
+    // 1. 递归的终止条件 (Base Case: 走到底了)
+    if (depth == n) {
+        for (int x : path) cout << x << " ";
+        cout << "\n";
+        return;
+    }
+
+    // 2. 遍历当前步骤下的所有可能选项
+    for (int i = 1; i <= n; i++) {
+        if (!used[i]) { // 如果这个数字还没被用过
+            
+            // 3. 做出选择 (标记状态)
+            used[i] = true;
+            path.push_back(i);
+
+            // 4. 进入下一层决策树
+            dfs(depth + 1);
+
+            // 5. 撤销选择 (回溯，恢复现场！这步是核心！)
+            path.pop_back();
+            used[i] = false;
+        }
+    }
+}
+
+int main() {
+    dfs(0); // 从第 0 层深度开始搜索
+    return 0;
+}
+    </pre>
+
+    <hr>
+
+    <h2>交互式推导演示</h2>
+    <p>观察对数组 <code>[1, 2]</code> 进行<strong>全排列</strong>时，DFS 的递归与回溯过程。拖动滑块查看每一步时<strong>路径栈 (Path)</strong> 和<strong>使用状态 (Used)</strong> 的变化：</p>
+    <div id="visualizer">
+        <div class="controls">
+            <label style="white-space: nowrap;">推演步骤 (0-8): </label>
+            <input type="range" id="inputStep" min="0" max="8" value="0">
+            <span id="valStep" style="font-weight: bold; width: 30px; text-align: center;">0</span>
+        </div>
+
+        <h3>当前收集的路径栈 (Path):</h3>
+        <div class="array-container" id="arrayPath"></div>
+
+        <h3>数字使用状态 (Used 数组: <span style="color:#27ae60">未用</span> / <span style="color:#c0392b">已用</span>):</h3>
+        <div class="array-container" id="arrayUsed"></div>
+
+        <div class="formula" id="logBox">
+            加载中...
+        </div>
+    </div>
+
+    <hr>
+
+    <h2>赛场避坑指南 (WA / TLE / MLE 警告)</h2>
+    <h3>1. 忘记恢复现场 (WA)</h3>
+    <p>如果不同分支共享同一个状态变量（如全局数组或引用传递），在子节点的 DFS 返回到父节点时，**必须**将修改过的状态改回来。否则上一个分支的污染会带入下一个分支，导致答案错误。</p>
+    <h3>2. 缺失 Base Case / 忘标记 Visited (MLE / TLE)</h3>
+    <p>在图的遍历中，图可能存在环。如果不使用 `visited` 数组记录走过的节点，DFS 会在环里无限循环，导致系统递归栈溢出（爆栈导致 Runtime Error / MLE）。另外，永远把 `if (终点)` 放在函数的开头。</p>
+    <h3>3. 不懂剪枝硬搜 (TLE)</h3>
+    <p>DFS 搜索树的规模往往是指数级 $O(2^N)$ 或阶乘级 $O(N!)$。当发现 $N > 20$ 且题目要求你用 DFS 时，一定要想办法剪枝。比如：当前花销已经大于已知最小答案了（最优性剪枝），或者当前状态无论如何也拼不凑出目标了（可行性剪枝），直接 `return` 结束该分支。</p>
+
+    <hr>
+
+    <h2>复杂度分析</h2>
+    <ul>
+        <li><strong>时间复杂度</strong>：
+            <ul>
+                <li>遍历图与树：每个节点和每条边访问一次，时间 $O(V + E)$。</li>
+                <li>组合穷举：视搜索树的大小而定，如全排列是 $O(N \times N!)$，子集生成是 $O(2^N)$。</li>
+            </ul>
+        </li>
+        <li><strong>空间复杂度</strong>：由递归调用栈的最大深度决定。对于树/图，最坏情况下（退化成链）为 $O(V)$；对于排列组合通常为 $O(N)$。</li>
+    </ul>
+</div>
+
+<script>
+    // 预先录制好 [1, 2] 全排列的每一步状态
+    const dfsSteps = [
+        { path: [], used: [false, false], log: "初始状态，准备选择数字进入第 1 层" },
+        { path: [1], used: [true, false], log: "做出选择：放入 1，标记 1 已用。递归进入下一层" },
+        { path: [1, 2], used: [true, true], log: "做出选择：放入 2。发现达到目标长度，输出结果 [1, 2]！准备 return" },
+        { path: [1], used: [true, false], log: "回溯 (恢复现场)：弹出 2，解除 2 的使用标记。寻找下一种可能" },
+        { path: [], used: [false, false], log: "回溯 (恢复现场)：弹出 1，解除 1 的使用标记。第一分支探索完毕" },
+        { path: [2], used: [false, true], log: "做出选择：刚才选了1，现在尝试放入 2，标记 2 已用。递归进入" },
+        { path: [2, 1], used: [true, true], log: "做出选择：放入 1。发现达到目标长度，输出结果 [2, 1]！准备 return" },
+        { path: [2], used: [false, true], log: "回溯 (恢复现场)：弹出 1，解除 1 的使用标记" },
+        { path: [], used: [false, false], log: "回溯 (恢复现场)：弹出 2，解除 2 的使用标记。所有分支探索完毕，DFS 结束" }
+    ];
+
+    function update() {
+        let stepIndex = parseInt(document.getElementById('inputStep').value);
+        document.getElementById('valStep').innerText = stepIndex;
+
+        const state = dfsSteps[stepIndex];
+
+        // 渲染 Path 栈
+        const containerPath = document.getElementById('arrayPath');
+        containerPath.innerHTML = '';
+        if (state.path.length === 0) {
+            containerPath.innerHTML = '<span style="color: #95a5a6; line-height: 40px; margin-left: 5px;">(栈为空)</span>';
+        } else {
+            for (let i = 0; i < state.path.length; i++) {
+                const box = document.createElement('div');
+                box.className = 'box path-box';
+                box.innerHTML = `<span class="label">层级 ${i+1}</span>${state.path[i]}`;
+                containerPath.appendChild(box);
+            }
+        }
+
+        // 渲染 Used 数组
+        const containerUsed = document.getElementById('arrayUsed');
+        containerUsed.innerHTML = '';
+        for (let i = 0; i < 2; i++) {
+            const isUsed = state.used[i];
+            const box = document.createElement('div');
+            box.className = 'box ' + (isUsed ? 'used-true' : 'used-false');
+            box.innerHTML = `<span class="label">数字 ${i+1}</span>${isUsed ? 'T' : 'F'}`;
+            containerUsed.appendChild(box);
+        }
+
+        // 更新解说日志区域
+        document.getElementById('logBox').innerHTML = state.log;
+    }
+
+    document.getElementById('inputStep').oninput = update;
+    update();
+</script>
+
+</body>
+</html>
