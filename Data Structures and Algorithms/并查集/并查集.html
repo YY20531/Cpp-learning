@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基础算法快速上手：并查集 (DSU)</title>
+    
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f7f6;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #2980b9; margin-top: 30px; }
+        h3 { color: #16a085; }
+        code {
+            background: #f8f8f8;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: "Courier New", Courier, monospace;
+            color: #e74c3c;
+        }
+        pre {
+            background: #2d3436;
+            color: #dfe6e9;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+            color: #2980b9;
+        }
+        .highlight { font-weight: bold; color: #d35400; }
+        
+        /* 交互区样式 */
+        #visualizer {
+            background: #ebf2f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 1px solid #3498db;
+        }
+        .array-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            min-height: 42px;
+        }
+        .box {
+            width: 45px;
+            height: 45px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #bdc3c7;
+            background: white;
+            font-weight: bold;
+            transition: all 0.3s;
+            position: relative;
+            border-radius: 6px;
+        }
+        .box .label {
+            position: absolute;
+            top: -18px;
+            font-size: 10px;
+            color: #7f8c8d;
+        }
+        .box .parent-val {
+            font-size: 14px;
+            color: #2c3e50;
+        }
+        .is-root { background: #f1c40f !important; border-color: #f39c12; }
+        .is-merged { background: #3498db !important; color: white; }
+        .controls { margin: 20px 0; display: flex; gap: 20px; align-items: center; }
+        input[type="range"] { flex-grow: 1; cursor: pointer; }
+        .formula {
+            font-size: 16px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            color: #2c3e50;
+            min-height: 24px;
+        }
+        .tag {
+            display: inline-block;
+            background: #ecf0f1;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-left: 10px;
+            font-weight: normal;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>核心思想</h1>
+    <p><strong>生活类比</strong>：想象江湖上有多个帮派。起初每个人都是自成一派。帮派之间会发生合并（<strong>Union</strong>），合并时需要确定谁是帮主。如果你想知道两个人是否属于同一帮派（<strong>Find</strong>），只需看他们的“最高帮主”是否为同一人即可。</p>
+    <ul>
+        <li><strong>查询 (Find)</strong>：找寻一个元素所属集合的代表元（帮主）。通过“路径压缩”，我们可以让所有成员直接向帮主汇报，极大提升速度。</li>
+        <li><strong>合并 (Union)</strong>：将两个不相交的集合合并为一个。通过“按秩合并”，我们可以让小帮派并入大帮派，防止帮派层级过深。</li>
+    </ul>
+    <p><strong>算法本质</strong>：<span class="highlight">维护集合的隶属关系</span>。它能以近乎 $O(1)$ 的时间复杂度处理动态连通性问题。</p>
+
+    <hr>
+
+    <h2>竞赛中的应用场景</h2>
+    <p>并查集是图论和数据结构中的“万金油”，常用于处理：</p>
+    <ul>
+        <li><strong>动态连通性</strong>：随时询问图中两点是否连通，或者随时往图中加边。</li>
+        <li><strong>最小生成树 (Kruskal 算法)</strong>：按照边权排序，使用并查集判断加入某条边是否会形成环。</li>
+        <li><strong>求连通分量个数</strong>：遍历完所有边后，统计有多少人的“帮主”是自己。</li>
+        <li><strong>带权并查集 / 种类并查集</strong>：维护元素之间的相对关系（如：食物链中的捕食关系、敌人的敌人是朋友等）。</li>
+        <li><strong>LCA 离线算法 (Tarjan)</strong>：利用并查集在 $O(N+Q)$ 时间内处理所有最近公共祖先查询。</li>
+    </ul>
+
+    <hr>
+
+    <h2>必刷经典题单</h2>
+    <p>从模板到复杂的逻辑建模，建议依次攻克：</p>
+    <ul>
+        <li><strong>Level 1: 基础模板</strong> 
+            <br><a href="https://www.luogu.com.cn/problem/P1551" target="_blank">洛谷 P1551 - 亲戚</a> <span class="tag">并查集模板</span>
+            <br><em>评语：最纯粹的并查集练习。实现 <code>find</code> 和 <code>join</code> 即可过关。</em>
+        </li>
+        <li style="margin-top: 10px;"><strong>Level 2: 连通块统计</strong> 
+            <br><a href="https://www.luogu.com.cn/problem/P1536" target="_blank">洛谷 P1536 - 村村通</a> <span class="tag">图论应用</span>
+            <br><em>评语：计算需要再建多少条路才能让所有村庄连通。本质是求 <code>连通分量个数 - 1</code>。</em>
+        </li>
+        <li style="margin-top: 10px;"><strong>Level 3: 最小生成树入门</strong> 
+            <br><a href="https://www.luogu.com.cn/problem/P3366" target="_blank">洛谷 P3366 - 最小生成树</a> <span class="tag">Kruskal 算法</span>
+            <br><em>评语：并查集在图论中最著名的应用。结合贪心思想解决修路成本最低问题。</em>
+        </li>
+        <li style="margin-top: 10px;"><strong>Level 4: 种类/关系并查集</strong> 
+            <br><a href="https://www.luogu.com.cn/problem/P2024" target="_blank">洛谷 P2024 - [NOI2001] 食物链</a> <span class="tag">带权/偏移量并查集</span>
+            <br><em>评语：神级经典题。需要利用“偏移量”或者“三倍空间并查集”来维护 A 吃 B、B 吃 C、C 吃 A 的循环关系。</em>
+        </li>
+    </ul>
+
+    <hr>
+
+    <h2>模板代码（C++ 版本）</h2>
+    <p>推荐使用路径压缩优化。注意：在调用 <code>unite</code> 前通常需要先用 <code>find</code> 检查是否已经在同一集合中。</p>
+    <pre>
+#include <iostream>
+#include <numeric>
+
+using namespace std;
+
+// 1. 定义全局数组。数组大小开到 N + 5 左右比较保险
+const int MAXN = 100005;
+int fa[MAXN];
+
+// 2. 查找函数 (Find)：包含路径压缩
+// 这一行逻辑很精简：如果我的父亲不是我，就递归找父亲，并顺便更新我的父亲
+int find(int i) {
+    return fa[i] == i ? i : fa[i] = find(fa[i]);
+}
+
+// 3. 合并函数 (Union)：合并两个元素所在的集合
+void unite(int i, int j) {
+    int root_i = find(i);
+    int root_j = find(j);
+    if (root_i != root_j) {
+        fa[root_i] = root_j; // 让一个根节点指向另一个根节点
+    }
+}
+
+int main() {
+    int n = 10;
+
+    // 4. 初始化：核心步骤，千万别忘！
+    // iota 是 <numeric> 里的函数，可以直接把数组填成 0, 1, 2, 3...
+    iota(fa, fa + n + 1, 0);
+
+    // 使用示例
+    unite(1, 2);
+    unite(2, 3);
+
+    if (find(1) == find(3)) {
+        cout << "1 和 3 在同一个帮派" << endl;
+    }
+
+    return 0;
+}
+    </pre>
+
+    <hr>
+
+    <h2>交互式推导演示</h2>
+    <p>假设有 6 个独立的节点。拖动滑块观察<strong>合并 (Union)</strong> 过程，注意 <code>Parent</code> 数组（存储每个节点的直接上级）是如何变化的：</p>
+    <div id="visualizer">
+        <div class="controls">
+            <label style="white-space: nowrap;">推演步骤 (0-4): </label>
+            <input type="range" id="inputStep" min="0" max="4" value="0">
+            <span id="valStep" style="font-weight: bold; width: 30px; text-align: center;">0</span>
+        </div>
+
+        <h3>节点与父级 (Parent 数组):</h3>
+        <div class="array-container" id="arrayParent"></div>
+
+        <div class="formula" id="logBox">
+            加载中...
+        </div>
+    </div>
+
+    <hr>
+
+    <h2>赛场避坑指南 (WA / TLE / MLE 警告)</h2>
+    <h3>1. 忘记初始化 (WA)</h3>
+    <p>并查集最开始必须 <code>for(i=1~n) fa[i] = i;</code>。如果初始值全是 0，所有的 <code>find</code> 都会死循环或者指向节点 0。</p>
+    <h3>2. 只有合并，没有路径压缩 (TLE)</h3>
+    <p>如果没有 <code>fa[x] = find(fa[x])</code> 这一步压缩，并查集可能会退化成一条很长的链，查询复杂度变成 $O(N)$，在大规模数据下必超时。</p>
+    <h3>3. 合并了非根节点 (Logic Error)</h3>
+    <p>在合并 $x$ 和 $y$ 时，应该先找到它们的根 $fx$ 和 $fy$，然后令 <code>fa[fx] = fy</code>。如果你直接令 <code>fa[x] = y</code>，会破坏原有的树形结构，导致逻辑错误。</p>
+    <h3>4. 带权并查集的回溯污染 (WA)</h3>
+    <p>在处理带权并查集（如食物链）时，路径压缩时权值的更新公式必须推导准确（通常是模运算），否则会导致关系错乱。</p>
+
+    <hr>
+
+    <h2>复杂度分析</h2>
+    <ul>
+        <li><strong>时间复杂度</strong>：
+            <ul>
+                <li>同时使用路径压缩和按秩合并：单次操作近乎 $O(\alpha(N))$，其中 $\alpha$ 是反阿克曼函数，在实际应用中可以看作常数（小于 5）。</li>
+                <li>仅使用路径压缩：最坏 $O(\log N)$。</li>
+            </ul>
+        </li>
+        <li><strong>空间复杂度</strong>：$O(N)$，只需一个存储父节点的数组。</li>
+    </ul>
+</div>
+
+<script>
+    // 模拟 1~6 节点的合并过程
+    // 0: 初始 [1,2,3,4,5,6]
+    // 1: Union(1, 2) -> 1 的 parent 变成 2
+    // 2: Union(3, 4) -> 3 的 parent 变成 4
+    // 3: Union(2, 4) -> 2 的 parent 变成 4 (此时 1->2->4, 3->4)
+    // 4: Find(1) (路径压缩) -> 1 的 parent 变成 4
+    const dsuSteps = [
+        { parent: [1, 2, 3, 4, 5, 6], logs: "初始状态：所有节点各自为政，帮主是自己。", highlight: [] },
+        { parent: [2, 2, 3, 4, 5, 6], logs: "执行 Union(1, 2)：节点 1 认 2 为帮主。现在 {1,2} 是一个集合。", highlight: [1] },
+        { parent: [2, 2, 4, 4, 5, 6], logs: "执行 Union(3, 4)：节点 3 认 4 为帮主。现在 {3,4} 是一个集合。", highlight: [3] },
+        { parent: [2, 4, 4, 4, 5, 6], logs: "执行 Union(2, 4)：帮主 2 认帮主 4 为大哥。现在 {1,2,3,4} 合并了！", highlight: [2] },
+        { parent: [4, 4, 4, 4, 5, 6], logs: "路径压缩：查询 1 的帮主时，顺便让 1 直接挂在最高帮主 4 下。效率起飞！", highlight: [1] }
+    ];
+
+    function update() {
+        let stepIndex = parseInt(document.getElementById('inputStep').value);
+        document.getElementById('valStep').innerText = stepIndex;
+
+        const state = dsuSteps[stepIndex];
+
+        // 渲染 Parent 数组
+        const container = document.getElementById('arrayParent');
+        container.innerHTML = '';
+        for (let i = 1; i <= 6; i++) {
+            const pVal = state.parent[i-1];
+            const box = document.createElement('div');
+            let cls = 'box';
+            if (pVal === i) cls += ' is-root';
+            if (state.highlight.includes(i)) cls += ' is-merged';
+            
+            box.className = cls;
+            box.innerHTML = `<span class="label">节点 ${i}</span><span class="parent-val">${pVal}</span>`;
+            container.appendChild(box);
+        }
+
+        // 更新日志
+        document.getElementById('logBox').innerHTML = state.logs;
+    }
+
+    document.getElementById('inputStep').oninput = update;
+    update();
+</script>
+
+</body>
+</html>
