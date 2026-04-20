@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基础算法快速上手：广度优先搜索 (BFS)</title>
+    
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f7f6;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #2980b9; margin-top: 30px; }
+        h3 { color: #16a085; }
+        code {
+            background: #f8f8f8;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: "Courier New", Courier, monospace;
+            color: #e74c3c;
+        }
+        pre {
+            background: #2d3436;
+            color: #dfe6e9;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+            color: #2980b9;
+        }
+        .highlight { font-weight: bold; color: #d35400; }
+        
+        /* 交互区样式 */
+        #visualizer {
+            background: #ebf2f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 1px solid #3498db;
+        }
+        .array-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            min-height: 42px;
+        }
+        .box {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #bdc3c7;
+            background: white;
+            font-weight: bold;
+            transition: all 0.3s;
+            position: relative;
+            border-radius: 6px;
+        }
+        .box .label {
+            position: absolute;
+            top: -20px;
+            font-size: 10px;
+            color: #7f8c8d;
+        }
+        .queue-box { background: #9b59b6 !important; color: white; border-color: #8e44ad; }
+        .visited-true { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .visited-false { background: #ecf0f1 !important; color: #7f8c8d; border-color: #bdc3c7; }
+        .controls { margin: 20px 0; display: flex; gap: 20px; align-items: center; }
+        input[type="range"] { flex-grow: 1; cursor: pointer; }
+        .formula {
+            font-size: 16px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            color: #2c3e50;
+            min-height: 24px;
+        }
+        .tag {
+            display: inline-block;
+            background: #ecf0f1;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-left: 10px;
+            font-weight: normal;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>核心思想</h1>
+    <p><strong>生活类比</strong>：想象一颗石子投入平静的湖面，水波会一圈一圈向外扩散。或者想象你在社交网络上找人：先问你的直接好友（第一层），如果没找到，再问你好友的好友（第二层），以此类推。</p>
+    <ul>
+        <li><strong>深度优先 (DFS)</strong>：不撞南墙不回头，用“栈”或“递归”实现。</li>
+        <li><strong>广度优先 (BFS)</strong>：齐头并进，稳扎稳打。它必须借助 <span class="highlight">队列 (Queue)</span> 这种“先进先出 (FIFO)”的数据结构来实现。</li>
+    </ul>
+    <p><strong>算法本质</strong>：<span class="highlight">层序遍历与无权最短路</span>。因为 BFS 是严格按照距离起点的“层级”由近及远向外扩展的，所以当你第一次碰到目标终点时，走过的步数一定是最少的。</p>
+
+    <hr>
+
+    <h2>竞赛中的应用场景</h2>
+    <p>在算法竞赛中，只要看到题目中出现<strong>“最少步数”、“最短距离”、“层级”</strong>等字眼，且走一步的代价都相同（无权图），BFS 绝对是首选武器：</p>
+    <ul>
+        <li><strong>网格迷宫寻路</strong>：在一个二维地图中，遇到墙壁不能走，求从起点到终点的最短步数。</li>
+        <li><strong>多源 BFS</strong>：地图上有多个起点同时开始向外扩散（例如：多处火源同时蔓延、腐烂的橘子传染周围的好橘子）。只需在一开始把所有起点都丢进队列即可。</li>
+        <li><strong>状态空间搜索 (隐式图)</strong>：比如经典的“八数码”问题、倒水问题。把棋盘的一个“局面”当成一个节点，每次移动得到的新局面当成邻居节点进行 BFS。</li>
+        <li><strong>拓扑排序</strong>：通过统计节点的入度，配合队列将入度为 0 的节点不断剥离，常用于解决任务调度、课程安排是否有环的问题。</li>
+    </ul>
+
+    <hr>
+
+    <h2>必刷经典题单</h2>
+    <p>以下题目涵盖了 BFS 从最基础的入队出队，到复杂状态判重的核心套路：</p>
+    <ul>
+        <li><strong>Level 1: 基础迷宫/层序遍历</strong> 
+            <br><a href="https://www.luogu.com.cn/problem/B3625" target="_blank">洛谷 B3625 - 迷宫寻路</a> <span class="tag">BFS 入门</span>
+            <br><em>评语：这道题是 BFS 的“Hello World”。它去掉了所有繁琐的干扰，让你集中精力练习如何正确地“入队、出队、标记访问”，并直观感受 BFS 像水波纹一样扩散的寻路逻辑。</em>
+        </li>
+        <li style="margin-top: 10px;"><strong>Level 2: 二维迷宫最短路</strong> 
+            <br><a href="https://www.luogu.com.cn/problem/P1443" target="_blank">洛谷 P1443 - 马的遍历</a> <span class="tag">方向数组 + 判重</span>
+            <br><em>评语：棋盘 BFS 必刷题。掌握 <code>dx[]</code> 和 <code>dy[]</code> 方向数组的写法，以及越界判断。</em>
+        </li>
+        <li style="margin-top: 10px;"><strong>Level 3: 多源并发 BFS</strong> 
+            <br><a href="https://www.luogu.com.cn/problem/P1332" target="_blank">洛谷 P1332 - 血色先锋队</a> <span class="tag">多源 BFS</span>
+            <br><em>评语：不要对每个起点分别做 BFS（会 TLE）。正确做法是初始时把所有感染源全部 `push` 进队列，然后自然蔓延。</em>
+        </li>
+        <li style="margin-top: 10px;"><strong>Level 4: 状态压缩与哈希判重</strong> 
+            <br><a href="https://www.luogu.com.cn/problem/P1379" target="_blank">洛谷 P1379 - 八数码难题</a> <span class="tag">状态图 BFS</span>
+            <br><em>评语：进阶神题。将一个 $3 \times 3$ 的矩阵压缩成一个整数或字符串，利用 <code>std::unordered_map</code> 记录该状态的最少步数。</em>
+        </li>
+    </ul>
+
+    <hr>
+
+    <h2>模板代码（C++ 版本）</h2>
+    <p>这是二维网格迷宫寻找最短路的经典模板。核心口诀：<strong>“队首出队 -> 枚举邻居 -> 合法且未访问 -> 标记访问并入队”</strong>。</p>
+    <pre>
+#include &lt;iostream&gt;
+#include &lt;queue&gt;
+
+using namespace std;
+
+// 定义状态结构体
+struct Node {
+    int x, y;
+    int step; // 记录从起点走到这里的步数
+};
+
+int main() {
+    int n = 5, m = 5; // 5x5 的迷宫
+    // 技巧：定义上下左右 4 个方向的偏移量
+    int dx[4] = {-1, 1, 0, 0}; 
+    int dy[4] = {0, 0, -1, 1};
+    
+    // 访问标记数组 (极度重要！)
+    bool visited[10][10] = {false};
+    
+    queue&lt;Node&gt; q;
+    
+    // 1. 起点入队，并立即标记为已访问
+    q.push({1, 1, 0});
+    visited[1][1] = true;
+    
+    while (!q.empty()) {
+        // 2. 取出队首元素
+        Node curr = q.front();
+        q.pop();
+        
+        // 如果到达终点，直接输出并结束
+        if (curr.x == n && curr.y == m) {
+            cout << "最短步数: " << curr.step << "\n";
+            return 0;
+        }
+        
+        // 3. 遍历四周相邻的节点
+        for (int i = 0; i < 4; i++) {
+            int nx = curr.x + dx[i];
+            int ny = curr.y + dy[i];
+            
+            // 4. 越界检查 与 访问判断
+            if (nx >= 1 && nx <= n && ny >= 1 && ny <= m && !visited[nx][ny]) {
+                // (此处可增加遇到墙壁不走的判断)
+                
+                // 5. 标记为已访问，并推入队列
+                visited[nx][ny] = true; 
+                q.push({nx, ny, curr.step + 1});
+            }
+        }
+    }
+    
+    cout << "无法到达终点\n";
+    return 0;
+}
+    </pre>
+
+    <hr>
+
+    <h2>交互式推导演示</h2>
+    <p>假设我们有一棵简单的树：根节点 <strong>1</strong> 的孩子是 <strong>2, 3</strong>；节点 2 的孩子是 <strong>4</strong>；节点 3 的孩子是 <strong>5</strong>。观察 BFS 是如何利用<strong>队列 (Queue)</strong> 进行“层序”遍历的：</p>
+    <div id="visualizer">
+        <div class="controls">
+            <label style="white-space: nowrap;">推演步骤 (0-5): </label>
+            <input type="range" id="inputStep" min="0" max="5" value="0">
+            <span id="valStep" style="font-weight: bold; width: 30px; text-align: center;">0</span>
+        </div>
+
+        <h3>当前队列内容 (队首 ⬅️ 队尾):</h3>
+        <div class="array-container" id="arrayQueue"></div>
+
+        <h3>节点访问状态 (Visited: <span style="color:#27ae60">已访问</span> / <span style="color:#7f8c8d">未访问</span>):</h3>
+        <div class="array-container" id="arrayVisited"></div>
+
+        <div class="formula" id="logBox">
+            加载中...
+        </div>
+    </div>
+
+    <hr>
+
+    <h2>赛场避坑指南 (MLE / TLE 警告)</h2>
+    <h3>1. 入队时不标记，出队时才标记 (超级大坑 - MLE/TLE)</h3>
+    <p>新手最容易犯的错！必须在<strong>将节点推入队列 (push) 的同一瞬间</strong>，将其标记为 `visited = true`。如果等节点从队列里弹出来 (pop) 时才标记，同一个节点可能会被其他邻居重复 push 进队列无数次，导致队列瞬间爆炸，引发内存超限 (MLE) 或超时 (TLE)。</p>
+    <h3>2. 滥用 BFS 处理带权图 (WA)</h3>
+    <p>BFS 能求最短路的前提是<strong>“边权全部相等”</strong>（走一步代价都算 1）。如果走到 A 消耗 5 体力，走到 B 消耗 2 体力，BFS 就失效了。此时必须换用 <strong>Dijkstra 算法</strong> (优先队列 BFS)。</p>
+    <h3>3. 忽略边界与越界判断 (RE)</h3>
+    <p>在使用 <code>dx</code> <code>dy</code> 扩展坐标时，永远记得先写 `nx >= 0 && nx < R` 的边界判断，再写 `!visited[nx][ny]` 的判断，否则会出现数组越界导致运行时错误 (Segment Fault)。</p>
+
+    <hr>
+
+    <h2>复杂度分析</h2>
+    <ul>
+        <li><strong>时间复杂度</strong>：$O(V + E)$。其中 $V$ 是节点数（网格的格子数），$E$ 是边数。每个节点最多入队出队一次，每条边最多被检查一次。</li>
+        <li><strong>空间复杂度</strong>：$O(V)$。队列中最坏情况下会装下整个图“最宽”的那一层的节点（例如完全二叉树的底层），外加一个大小为 $V$ 的 <code>visited</code> 访问数组。</li>
+    </ul>
+</div>
+
+<script>
+    // 模拟图：1->(2,3), 2->(4), 3->(5)
+    // 记录每一步的 队列状态 和 Visited 状态
+    const bfsSteps = [
+        { 
+            queue: [1], 
+            visited: [true, false, false, false, false], 
+            log: "初始状态：将起点 1 加入队列，并立即标记已访问。" 
+        },
+        { 
+            queue: [2, 3], 
+            visited: [true, true, true, false, false], 
+            log: "第 1 层：弹出队首 1，将它的邻居 2, 3 加入队列，并标记已访问。" 
+        },
+        { 
+            queue: [3, 4], 
+            visited: [true, true, true, true, false], 
+            log: "第 2 层扩展：弹出队首 2，将它的邻居 4 加入队列，标记已访问。" 
+        },
+        { 
+            queue: [4, 5], 
+            visited: [true, true, true, true, true], 
+            log: "第 2 层扩展：弹出队首 3，将它的邻居 5 加入队列，标记已访问。" 
+        },
+        { 
+            queue: [5], 
+            visited: [true, true, true, true, true], 
+            log: "第 3 层扩展：弹出队首 4，它没有未访问的邻居，直接跳过。" 
+        },
+        { 
+            queue: [], 
+            visited: [true, true, true, true, true], 
+            log: "第 3 层扩展：弹出队首 5，它也没有邻居。队列为空，BFS 结束！" 
+        }
+    ];
+
+    function update() {
+        let stepIndex = parseInt(document.getElementById('inputStep').value);
+        document.getElementById('valStep').innerText = stepIndex;
+
+        const state = bfsSteps[stepIndex];
+
+        // 渲染 队列
+        const containerQueue = document.getElementById('arrayQueue');
+        containerQueue.innerHTML = '';
+        if (state.queue.length === 0) {
+            containerQueue.innerHTML = '<span style="color: #95a5a6; line-height: 40px; margin-left: 5px;">(队列为空)</span>';
+        } else {
+            for (let i = 0; i < state.queue.length; i++) {
+                const box = document.createElement('div');
+                box.className = 'box queue-box';
+                // 第一个是队首
+                if (i === 0) {
+                    box.innerHTML = `<span class="label">队首</span>${state.queue[i]}`;
+                } else if (i === state.queue.length - 1) {
+                    box.innerHTML = `<span class="label">队尾</span>${state.queue[i]}`;
+                } else {
+                    box.innerHTML = `${state.queue[i]}`;
+                }
+                containerQueue.appendChild(box);
+            }
+        }
+
+        // 渲染 Visited 数组 (对应节点 1~5)
+        const containerVisited = document.getElementById('arrayVisited');
+        containerVisited.innerHTML = '';
+        for (let i = 0; i < 5; i++) {
+            const isVisited = state.visited[i];
+            const box = document.createElement('div');
+            box.className = 'box ' + (isVisited ? 'visited-true' : 'visited-false');
+            box.innerHTML = `<span class="label">节点 ${i+1}</span>${isVisited ? '✔' : '空'}`;
+            containerVisited.appendChild(box);
+        }
+
+        // 更新解说日志区域
+        document.getElementById('logBox').innerHTML = state.log;
+    }
+
+
+
+    document.getElementById('inputStep').oninput = update;
+    update();
+</script>
+
+</body>
+</html>
